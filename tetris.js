@@ -35,8 +35,16 @@ var bottomLines = {
       this.fieldArr[field.row] = new Array(5);
     }
     this.fieldArr[field.row][field.column] = field;
+  },
+  isAvaliable: function(field) {
+    if(this.fieldArr[field.row+1] && this.fieldArr[field.row+1][field.column+1]){
+      return false;
+    }else{
+      return true;
+    }
   }
 };
+
 var figureTemplates = [
   {name: "stick",color: "yellow", fields: [{x: 0, y: 2}, {x: 1, y: 2}, {x: 2, y: 2}, {x: 3, y: 2}, {x: 4, y: 2}]}
 ]
@@ -84,7 +92,7 @@ class figure {
   canMove() {
     let can = true;
     this.fieldArr.forEach(e => {
-      if (e.row + 1 >= 20) {
+      if (e.row + 1 >= 20 || !bottomLines.isAvaliable(e)) {
         console.log("can't move")
         can = false;
       }
