@@ -164,8 +164,11 @@ class field {
   draw() {
     this.ctx.fillStyle = this.color;
     this.ctx.fillRect(this.startX, this.startY, this.fWidth, this.fHeight);
-    this.ctx.lineWidth = 1;
-    this.ctx.strokeRect(this.startX + 1, this.startY + 1, this.fWidth - 2, this.fHeight - 2);
+    this.ctx.lineWidth = 2;
+    for(var i=0; i < 8; i++){
+      this.ctx.fillStyle = "rgba(255,255,255,0.2)";
+      this.ctx.fillRect(this.startX + i, this.startY + i, this.fWidth - 2*i, this.fHeight - 2*i);
+    }
   }
   move(c, r) {
     this.column += c;
