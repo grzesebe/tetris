@@ -32,6 +32,7 @@ window.onload = () => {
       falling.rotate();
     }
   });
+
   document.addEventListener('keyup', e => {
     if (e.code === "ArrowDown" && currentSpeed != initialSpeed) {
       currentSpeed = initialSpeed;
@@ -45,7 +46,6 @@ window.onload = () => {
     if (step) clearTimeout(step);
     if (falling) {
       if (falling.moveDown()) {
-        // falling.drawAll();
       } else {
         falling = new figure(boardCtx);
       }
@@ -54,20 +54,78 @@ window.onload = () => {
   }
   fall()
 
-  setInterval(() => {
-    if (falling) falling.drawAll();
-    // console.log(fieldStack)
-  }, 1000 / fps);
+  // setInterval(() => {
+  //   if (falling) falling.drawAll();
+  // }, 1000 / fps);
 }
 
+
+var figureTemplates = [
+  {
+    name: "stick",
+    color: "red",
+    figureWidth: 4,
+    fields: [{c: 3, r: 2},{c: 2, r: 2}, {c: 1, r: 2}, {c: 0, r: 2}],
+  },
+  {
+    name: "T",
+    color: "gray",
+    figureWidth: 3,
+    fields: [{c: 2, r: 2}, {c: 1, r: 1},{c: 1, r: 2}, {c: 0, r: 2}],
+  },
+  {
+    name: "square",
+    color: "#7BFFFF",
+    figureWidth: 2,
+    fields: [{c: 1, r: 1}, {c: 0, r: 1}, {c: 1, r: 0}, {c: 0, r: 0}],
+  },
+  {
+    name: "L",
+    color: "yellow",
+    figureWidth: 3,
+    fields: [{c: 0, r: 0}, {c: 0, r: 1}, {c: 0, r: 2}, {c: 1, r: 2}],
+  },
+  {
+    name: "reverse L",
+    color: "purple",
+    figureWidth: 3,
+    fields: [{c: 0, r: 2}, {c: 1, r: 2}, {c: 1, r: 1}, {c: 1, r: 0}],
+  },
+  {
+    name: "reverse Z",
+    color: "blue",
+    fields: [{c: 0, r: 2}, {c: 1, r: 2}, {c: 1, r: 1}, {c: 2, r: 1}],
+  },
+  {
+    name: "Z",
+    color: "green",
+    fields: [{c: 0, r: 1}, {c: 1, r: 1}, {c: 2, r: 1}, {c: 2, r: 2}],
+  }
+]
 
 var fieldStack = {
   fieldArr: [],
   addField: function (field) {
     if (!this.fieldArr[field.row]) {
-      this.fieldArr[field.row] = new Array(4);
+      this.fieldArr[field.row] = new Array();
     }
     this.fieldArr[field.row][field.column] = field;
+    this.checkLine(field.row);
+
+  },
+  clearRow: function(row){
+    console.log("row: "+row+" is full");
+  },
+  checkLine: function(row) {
+    let countFields = 0;
+    for(var i = 0; i < 10; i++){
+      if(this.fieldArr[row][i]){
+        countFields++;
+      }
+    }
+    if(countFields >= 10){
+      this.clearRow(row);
+    }
   },
   isAvaliable: function (c, r) {
     if (this.fieldArr[r] && this.fieldArr[r][c]) {
@@ -84,27 +142,6 @@ var fieldStack = {
     });
   }
 };
-
-var figureTemplates = [{
-  name: "stick",
-  color: "yellow",
-  fields: [{
-    c: 0,
-    r: 2
-  }, {
-    c: 1,
-    r: 2
-  }, {
-    c: 2,
-    r: 2
-  }, {
-    c: 3,
-    r: 2
-  }, {
-    c: 3,
-    r: 1
-  }]
-}]
 
 
 
@@ -125,8 +162,6 @@ class field {
     this.startY = this.row * this.fHeight;
   }
   draw() {
-    this.clear();
-    this.calculate();
     this.ctx.fillStyle = this.color;
     this.ctx.fillRect(this.startX, this.startY, this.fWidth, this.fHeight);
     this.ctx.lineWidth = 1;
@@ -141,12 +176,13 @@ class field {
 
 class figure {
   constructor(ctx) {
-    this.template = figureTemplates[0];
+    let template = figureTemplates[Math.floor(Math.random()*figureTemplates.length)];
     this.fieldArr = [];
-    this.color = this.template.color
+    this.color = template.color;
+    this.figureWidth = template.figureWidth;
     this.ctx = ctx;
-    this.template.fields.forEach((e, idx) => {
-      this.fieldArr[idx] = new field(e.c, e.r - 4, this.ctx, this.color)
+    template.fields.forEach((e, idx) => {
+      this.fieldArr[idx] = new field(e.c, e.r - this.figureWidth, this.ctx, this.color)
       this.fieldArr[idx].columnInFigure = e.c;
       this.fieldArr[idx].rowInFigure = e.r;
       this.fieldArr[idx].idx = idx;
@@ -166,7 +202,7 @@ class figure {
   canRotate() {
     return this.fieldArr.every(e => {
       let newRow = e.columnInFigure;
-      let newColumn = 2 - e.rowInFigure;
+      let newColumn = this.figureWidth - 1 - e.rowInFigure;
       let row = e.row - e.rowInFigure + newRow;
       let column = e.column - e.columnInFigure + newColumn;
       return (fieldStack.isAvaliable(column, row) && row < 20 && 0 <= column && column < 10);
@@ -177,6 +213,7 @@ class figure {
       this.fieldArr.forEach(e => {
         e.move(0, 1);
       });
+      this.drawAll();
       return true;
     } else {
       this.sendToStack();
@@ -201,15 +238,20 @@ class figure {
     if (this.canRotate()) {
       this.fieldArr.forEach(e => {
         let newRow = e.columnInFigure;
-        let newColumn = 2 - e.rowInFigure;
+        let newColumn = this.figureWidth - 1 - e.rowInFigure;
         e.row = e.row - e.rowInFigure + newRow;
         e.column = e.column - e.columnInFigure + newColumn;
         e.rowInFigure = newRow;
         e.columnInFigure = newColumn;
       });
+      this.drawAll();
     }
   }
   drawAll = function () {
+    this.fieldArr.forEach(e => {
+      e.clear();
+      e.calculate();
+    });
     this.fieldArr.forEach(e => {
       e.draw();
     });
