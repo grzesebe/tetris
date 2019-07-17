@@ -34,7 +34,7 @@ window.onload = () => {
 }
 
 
-var bottomLines = {
+var fieldStack = {
   fieldArr: [],
   addField: function (field) {
     if (!this.fieldArr[field.row]) {
@@ -42,8 +42,8 @@ var bottomLines = {
     }
     this.fieldArr[field.row][field.column] = field;
   },
-  isAvaliable: function (field) {
-    if (this.fieldArr[field.row + 1] && this.fieldArr[field.row + 1][field.column + 1]) {
+  isAvaliable: function (c,r) {
+    if (this.fieldArr[r] && this.fieldArr[r][c]) {
       return false;
     } else {
       return true;
@@ -116,13 +116,13 @@ class figure {
   }
   canMoveDown() {
     return this.fieldArr.every(e => {
-      return (bottomLines.isAvaliable(e) && e.row + 1 < 20);
+      return (fieldStack.isAvaliable(e.column, e.row + 1) && e.row + 1 < 20);
     });
   }
   canMoveSide(c) {
     return this.fieldArr.every((e) => {
       let finalPosition = e.column + c;
-      return 0 <= finalPosition && finalPosition < 10;
+      return (fieldStack.isAvaliable(e.column + c, e.row) && 0 <= finalPosition && finalPosition < 10);
     });
   }
   moveDown() {
@@ -150,9 +150,9 @@ class figure {
   }
   sendToStack() {
     this.fieldArr.forEach(e => {
-      bottomLines.addField(e)
+      fieldStack.addField(e)
     });
-    console.log(bottomLines);
+    console.log(fieldStack);
   }
   drawAll = function () {
     this.fieldArr.forEach(e => {
