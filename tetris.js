@@ -185,7 +185,7 @@ class figure {
     this.figureWidth = template.figureWidth;
     this.ctx = ctx;
     template.fields.forEach((e, idx) => {
-      this.fieldArr[idx] = new field(e.c, e.r - this.figureWidth, this.ctx, this.color)
+      this.fieldArr[idx] = new field(e.c + Math.floor((10-this.figureWidth)/2), e.r - this.figureWidth, this.ctx, this.color)
       this.fieldArr[idx].columnInFigure = e.c;
       this.fieldArr[idx].rowInFigure = e.r;
       this.fieldArr[idx].idx = idx;
