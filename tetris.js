@@ -7,29 +7,53 @@ window.onload = () => {
   can.style.width = "300px";
   can.style.height = "600px";
   div.appendChild(can);
-  ctx = can.getContext("2d");
-  ctx.width = can.width;
-  ctx.height = can.height;
+  boardCtx = can.getContext("2d");
+  boardCtx.width = can.width;
+  boardCtx.height = can.height;
 
-  var falling = new figure(ctx);
+
+
+  const initialSpeed = 3;
+  var currentSpeed = 3;
+
+  var falling = new figure(boardCtx);
+
   document.addEventListener('keydown', e => {
     if (e.code === "ArrowRight") {
       falling.moveSide(1);
     } else if (e.code === "ArrowLeft") {
       falling.moveSide(-1);
+    }else if (e.code === "ArrowDown") {
+      if (currentSpeed === initialSpeed){
+        currentSpeed *= 4;
+        fall();
+      }
     }
   });
-  const fps = 3;
-  setInterval(() => {
+  document.addEventListener('keyup', e => {
+    if (e.code === "ArrowDown" && currentSpeed != initialSpeed) {
+      currentSpeed = initialSpeed;
+      fall();
+    }
+  })
+  var fps = 20;
+  var step;
+  function fall() {
+    if(step) clearTimeout(step);
     if (falling) {
       if (falling.moveDown()) {
         // falling.drawAll();
       } else {
-        falling = new figure(ctx);
+        falling = new figure(boardCtx);
       }
     }
+    step = setTimeout(fall, 1000 / currentSpeed);
+  }
+  fall()
 
-    console.log("refreshed");
+  setInterval(() => {
+    if (falling) falling.drawAll();
+    console.log(fieldStack)
   }, 1000 / fps);
 }
 
@@ -38,7 +62,7 @@ var fieldStack = {
   fieldArr: [],
   addField: function (field) {
     if (!this.fieldArr[field.row]) {
-      this.fieldArr[field.row] = new Array(5);
+      this.fieldArr[field.row] = new Array(4);
     }
     this.fieldArr[field.row][field.column] = field;
   },
@@ -79,7 +103,7 @@ class field {
     this.ctx = ctx;
   }
   clear() {
-    ctx.clearRect(this.startX, this.startY, this.fWidth, this.fHeight);
+    this.ctx.clearRect(this.startX, this.startY, this.fWidth, this.fHeight);
   }
   calculate() {
     this.fWidth = this.ctx.width / 10;
@@ -88,17 +112,16 @@ class field {
     this.startY = this.row * this.fHeight;
   }
   draw() {
+    this.clear();
     this.calculate();
-    ctx.fillStyle = this.color;
-    ctx.fillRect(this.startX, this.startY, this.fWidth, this.fHeight);
-    ctx.lineWidth = 1;
-    ctx.strokeRect(this.startX + 1, this.startY + 1, this.fWidth - 2, this.fHeight - 2);
+    this.ctx.fillStyle = this.color;
+    this.ctx.fillRect(this.startX, this.startY, this.fWidth, this.fHeight);
+    this.ctx.lineWidth = 1;
+    this.ctx.strokeRect(this.startX + 1, this.startY + 1, this.fWidth - 2, this.fHeight - 2);
   }
   move(c, r) {
-    this.clear();
     this.column += c;
     this.row += r;
-    this.draw();
   }
 }
 
@@ -112,7 +135,6 @@ class figure {
     this.template.fields.forEach((e, idx) => {
       this.fieldArr[idx] = new field(e.x, e.y - 4, this.ctx, this.color)
     });
-    console.log(this);
   }
   canMoveDown() {
     return this.fieldArr.every(e => {
@@ -137,13 +159,9 @@ class figure {
     }
   }
   moveSide(c) {
-    console.log("moving x: " + c)
     if (this.canMoveSide(c)) {
-      console.log("can move side")
       this.fieldArr.forEach(e => {
-        console.log(e)
         e.move(c, 0)
-        console.log(e)
       });
       this.drawAll();
     }
@@ -152,18 +170,10 @@ class figure {
     this.fieldArr.forEach(e => {
       fieldStack.addField(e)
     });
-    console.log(fieldStack);
   }
   drawAll = function () {
     this.fieldArr.forEach(e => {
       e.draw();
     });
-  }
-}
-
-class line {
-  constructor(field) {
-    this.fieldArr = new Array(5)
-    console.log(this)
   }
 }
