@@ -63,13 +63,13 @@ window.onload = () => {
 var figureTemplates = [
   {
     name: "stick",
-    color: "red",
+    color: "#FE453C",
     figureWidth: 4,
     fields: [{c: 3, r: 2},{c: 2, r: 2}, {c: 1, r: 2}, {c: 0, r: 2}],
   },
   {
     name: "T",
-    color: "gray",
+    color: "#999999",
     figureWidth: 3,
     fields: [{c: 2, r: 2}, {c: 1, r: 1},{c: 1, r: 2}, {c: 0, r: 2}],
   },
@@ -81,24 +81,24 @@ var figureTemplates = [
   },
   {
     name: "L",
-    color: "yellow",
+    color: "#FFFF56",
     figureWidth: 3,
     fields: [{c: 0, r: 0}, {c: 0, r: 1}, {c: 0, r: 2}, {c: 1, r: 2}],
   },
   {
     name: "reverse L",
-    color: "purple",
+    color: "#FD61FF",
     figureWidth: 3,
     fields: [{c: 0, r: 2}, {c: 1, r: 2}, {c: 1, r: 1}, {c: 1, r: 0}],
   },
   {
     name: "reverse Z",
-    color: "blue",
+    color: "#1F47FF",
     fields: [{c: 0, r: 2}, {c: 1, r: 2}, {c: 1, r: 1}, {c: 2, r: 1}],
   },
   {
     name: "Z",
-    color: "green",
+    color: "#81FF45",
     fields: [{c: 0, r: 1}, {c: 1, r: 1}, {c: 2, r: 1}, {c: 2, r: 2}],
   }
 ]
