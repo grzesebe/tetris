@@ -23,11 +23,13 @@ window.onload = () => {
       falling.moveSide(1);
     } else if (e.code === "ArrowLeft") {
       falling.moveSide(-1);
-    }else if (e.code === "ArrowDown") {
-      if (currentSpeed === initialSpeed){
+    } else if (e.code === "ArrowDown") {
+      if (currentSpeed === initialSpeed) {
         currentSpeed *= 4;
         fall();
       }
+    } else if (e.code === "ArrowUp") {
+      falling.rotate();
     }
   });
   document.addEventListener('keyup', e => {
@@ -38,8 +40,9 @@ window.onload = () => {
   })
   var fps = 20;
   var step;
+
   function fall() {
-    if(step) clearTimeout(step);
+    if (step) clearTimeout(step);
     if (falling) {
       if (falling.moveDown()) {
         // falling.drawAll();
@@ -53,7 +56,7 @@ window.onload = () => {
 
   setInterval(() => {
     if (falling) falling.drawAll();
-    console.log(fieldStack)
+    // console.log(fieldStack)
   }, 1000 / fps);
 }
 
@@ -66,12 +69,19 @@ var fieldStack = {
     }
     this.fieldArr[field.row][field.column] = field;
   },
-  isAvaliable: function (c,r) {
+  isAvaliable: function (c, r) {
     if (this.fieldArr[r] && this.fieldArr[r][c]) {
       return false;
     } else {
       return true;
     }
+  },
+  drawAll: function () {
+    this.fieldArr.forEach(e => {
+      e.forEach(element => {
+        element.draw();
+      });
+    });
   }
 };
 
@@ -79,17 +89,20 @@ var figureTemplates = [{
   name: "stick",
   color: "yellow",
   fields: [{
-    x: 0,
-    y: 2
+    c: 0,
+    r: 2
   }, {
-    x: 1,
-    y: 2
+    c: 1,
+    r: 2
   }, {
-    x: 2,
-    y: 2
+    c: 2,
+    r: 2
   }, {
-    x: 3,
-    y: 2
+    c: 3,
+    r: 2
+  }, {
+    c: 3,
+    r: 1
   }]
 }]
 
@@ -133,7 +146,10 @@ class figure {
     this.color = this.template.color
     this.ctx = ctx;
     this.template.fields.forEach((e, idx) => {
-      this.fieldArr[idx] = new field(e.x, e.y - 4, this.ctx, this.color)
+      this.fieldArr[idx] = new field(e.c, e.r - 4, this.ctx, this.color)
+      this.fieldArr[idx].columnInFigure = e.c;
+      this.fieldArr[idx].rowInFigure = e.r;
+      this.fieldArr[idx].idx = idx;
     });
   }
   canMoveDown() {
@@ -147,8 +163,17 @@ class figure {
       return (fieldStack.isAvaliable(e.column + c, e.row) && 0 <= finalPosition && finalPosition < 10);
     });
   }
+  canRotate() {
+    return this.fieldArr.every(e => {
+      let newRow = e.columnInFigure;
+      let newColumn = 2 - e.rowInFigure;
+      let row = e.row - e.rowInFigure + newRow;
+      let column = e.column - e.columnInFigure + newColumn;
+      return (fieldStack.isAvaliable(column, row) && row < 20 && 0 <= column && column < 10);
+    });
+  }
   moveDown() {
-    if (this.canMoveDown() === true) {
+    if (this.canMoveDown()) {
       this.fieldArr.forEach(e => {
         e.move(0, 1);
       });
@@ -169,7 +194,20 @@ class figure {
   sendToStack() {
     this.fieldArr.forEach(e => {
       fieldStack.addField(e)
+      fieldStack.drawAll(); 
     });
+  }
+  rotate() {
+    if (this.canRotate()) {
+      this.fieldArr.forEach(e => {
+        let newRow = e.columnInFigure;
+        let newColumn = 2 - e.rowInFigure;
+        e.row = e.row - e.rowInFigure + newRow;
+        e.column = e.column - e.columnInFigure + newColumn;
+        e.rowInFigure = newRow;
+        e.columnInFigure = newColumn;
+      });
+    }
   }
   drawAll = function () {
     this.fieldArr.forEach(e => {
