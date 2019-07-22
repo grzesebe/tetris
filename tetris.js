@@ -32,13 +32,18 @@ window.onload = () => {
       falling.rotate();
     }
   });
-
+  var slowdon = function(){
+    currentSpeed = initialSpeed;
+      fall();
+  }
   document.addEventListener('keyup', e => {
     if (e.code === "ArrowDown" && currentSpeed != initialSpeed) {
-      currentSpeed = initialSpeed;
-      fall();
+      slowdon();
     }
   })
+  window.addEventListener("blur", e =>{
+    slowdon();
+  });
   var fps = 20;
   var step;
 
@@ -54,9 +59,6 @@ window.onload = () => {
   }
   fall()
 
-  // setInterval(() => {
-  //   if (falling) falling.drawAll();
-  // }, 1000 / fps);
 }
 
 
