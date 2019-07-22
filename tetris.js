@@ -65,86 +65,45 @@ var figureTemplates = [
     name: "stick",
     color: "#FE453C",
     figureWidth: 4,
-    fields: [{c: 3, r: 2},{c: 2, r: 2}, {c: 1, r: 2}, {c: 0, r: 2}],
+    fields: [{c: 3, r: 2},{c: 2, r: 2}, {c: 1, r: 2}, {c: 0, r: 2}]
   },
   {
     name: "T",
     color: "#999999",
     figureWidth: 3,
-    fields: [{c: 2, r: 2}, {c: 1, r: 1},{c: 1, r: 2}, {c: 0, r: 2}],
+    fields: [{c: 2, r: 2}, {c: 1, r: 1},{c: 1, r: 2}, {c: 0, r: 2}]
   },
   {
     name: "square",
     color: "#7BFFFF",
     figureWidth: 2,
-    fields: [{c: 1, r: 1}, {c: 0, r: 1}, {c: 1, r: 0}, {c: 0, r: 0}],
+    fields: [{c: 1, r: 1}, {c: 0, r: 1}, {c: 1, r: 0}, {c: 0, r: 0}]
   },
   {
     name: "L",
     color: "#FFFF56",
     figureWidth: 3,
-    fields: [{c: 0, r: 0}, {c: 0, r: 1}, {c: 0, r: 2}, {c: 1, r: 2}],
+    fields: [{c: 0, r: 0}, {c: 0, r: 1}, {c: 0, r: 2}, {c: 1, r: 2}]
   },
   {
     name: "reverse L",
     color: "#FD61FF",
     figureWidth: 3,
-    fields: [{c: 0, r: 2}, {c: 1, r: 2}, {c: 1, r: 1}, {c: 1, r: 0}],
+    fields: [{c: 0, r: 2}, {c: 1, r: 2}, {c: 1, r: 1}, {c: 1, r: 0}]
   },
   {
     name: "reverse Z",
     color: "#1F47FF",
-    fields: [{c: 0, r: 2}, {c: 1, r: 2}, {c: 1, r: 1}, {c: 2, r: 1}],
+    figureWidth: 3,
+    fields: [{c: 0, r: 2}, {c: 1, r: 2}, {c: 1, r: 1}, {c: 2, r: 1}]
   },
   {
     name: "Z",
     color: "#81FF45",
-    fields: [{c: 0, r: 1}, {c: 1, r: 1}, {c: 2, r: 1}, {c: 2, r: 2}],
+    figureWidth: 3,
+    fields: [{c: 0, r: 0}, {c: 1, r: 0}, {c: 1, r: 1}, {c: 2, r: 1}]
   }
 ]
-
-var fieldStack = {
-  fieldArr: [],
-  addField: function (field) {
-    if (!this.fieldArr[field.row]) {
-      this.fieldArr[field.row] = new Array();
-    }
-    this.fieldArr[field.row][field.column] = field;
-    this.checkLine(field.row);
-
-  },
-  clearRow: function(row){
-    console.log("row: "+row+" is full");
-  },
-  checkLine: function(row) {
-    let countFields = 0;
-    for(var i = 0; i < 10; i++){
-      if(this.fieldArr[row][i]){
-        countFields++;
-      }
-    }
-    if(countFields >= 10){
-      this.clearRow(row);
-    }
-  },
-  isAvaliable: function (c, r) {
-    if (this.fieldArr[r] && this.fieldArr[r][c]) {
-      return false;
-    } else {
-      return true;
-    }
-  },
-  drawAll: function () {
-    this.fieldArr.forEach(e => {
-      e.forEach(element => {
-        element.draw();
-      });
-    });
-  }
-};
-
-
-
 class field {
   constructor(column, row, ctx, color) {
     this.column = column;
@@ -162,6 +121,7 @@ class field {
     this.startY = this.row * this.fHeight;
   }
   draw() {
+    this.calculate();
     this.ctx.fillStyle = this.color;
     this.ctx.fillRect(this.startX, this.startY, this.fWidth, this.fHeight);
     this.ctx.lineWidth = 2;
@@ -176,10 +136,69 @@ class field {
   }
 }
 
+var fieldStack = {
+  fieldArr: new Array(20),
+  addField: function (field) {
+    if (!this.fieldArr[field.row]) {
+      this.fieldArr[field.row] = new Array();
+    }
+    this.fieldArr[field.row][field.column] = field;
+  },
+  clearRow: function(row){
+    this.fieldArr[row].forEach(e => {
+      e.calculate();
+      e.clear();
+    });
+    if(this.fieldArr[row-1] != null){
+      for (let i = row; i >= 0; i--) {
+        if(this.fieldArr[i]){
+          this.fieldArr[i] = (i === 0 || !this.fieldArr[i-1]) ? [] : this.fieldArr[i-1];
+          this.fieldArr[i].forEach(e => {
+            e.clear();
+            e.move(0, 1);
+            e.draw();
+          });
+        }
+      }
+    }
+  },
+  rowIsFull: function(row) {
+    let countFields = 0;
+    for(var i = 0; i < 10; i++){
+      if(this.fieldArr[row] && this.fieldArr[row][i]){
+        countFields++;
+      }
+    }
+    return countFields >= 10;
+  },
+  isAvaliable: function (c, r) {
+    return (this.fieldArr[r] && this.fieldArr[r][c]) ? false : true;
+  },
+  drawAll: function () {
+    for (let i = this.fieldArr.length-1; i > 0; i--) {
+      if(this.fieldArr[i]){
+        if(this.rowIsFull(i)){
+          this.clearRow(i)
+          this.drawAll();
+        }else{
+          this.fieldArr[i].forEach(e => {
+            e.clear();
+            e.calculate();
+            e.draw();
+          })
+        }
+      }
+    }
+  }
+};
+
+
+
+
 
 class figure {
   constructor(ctx) {
-    let template = figureTemplates[Math.floor(Math.random()*figureTemplates.length)];
+    let template = figureTemplates[Math.floor(Math.random()*(figureTemplates.length-1-0+1)+0)];
     this.fieldArr = [];
     this.color = template.color;
     this.figureWidth = template.figureWidth;
@@ -219,8 +238,12 @@ class figure {
       this.drawAll();
       return true;
     } else {
-      this.sendToStack();
-      return false;
+      if(this.sendToStack() === "matched"){
+        setTimeout(() => {
+          fieldStack.drawAll();
+          return false;
+        }, 500);
+      }else return false;
     }
   }
   moveSide(c) {
@@ -234,8 +257,8 @@ class figure {
   sendToStack() {
     this.fieldArr.forEach(e => {
       fieldStack.addField(e)
-      fieldStack.drawAll(); 
     });
+    fieldStack.drawAll();
   }
   rotate() {
     if (this.canRotate()) {
@@ -253,7 +276,6 @@ class figure {
   drawAll = function () {
     this.fieldArr.forEach(e => {
       e.clear();
-      e.calculate();
     });
     this.fieldArr.forEach(e => {
       e.draw();
