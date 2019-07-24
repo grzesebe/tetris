@@ -1,22 +1,39 @@
 window.onload = () => {
   div = document.createElement("div");
+  div.classList.add("tetris")
+  document.getElementById("tetris-wrapper").appendChild(div);
+  
+  
   can = document.createElement("canvas");
   can.width = "300";
   can.height = "600";
-  document.getElementById("tetris-wrapper").appendChild(div);
+  div.appendChild(can);
   can.style.width = "300px";
   can.style.height = "600px";
-  div.appendChild(can);
   boardCtx = can.getContext("2d");
   boardCtx.width = can.width;
   boardCtx.height = can.height;
-
-
-
+  boardCtx.columns = 10;
+  boardCtx.rows = 20;
+  
+  can2 = document.createElement("canvas");
+  can2.width = "200";
+  can2.height = "200";
+  div.appendChild(can2);
+  can2.style.width = "200px";
+  can2.style.height = "200px";
+  waitCtx = can2.getContext("2d");
+  waitCtx.width = can2.width;
+  waitCtx.height = can2.height;
+  waitCtx.columns = 4;
+  waitCtx.rows = 4;
+  
+  
   const initialSpeed = 3;
   var currentSpeed = 3;
-
+  
   var falling = new figure(boardCtx);
+  var next = new figure(waitCtx);
 
   document.addEventListener('keydown', e => {
     if (e.code === "ArrowRight") {
@@ -52,7 +69,10 @@ window.onload = () => {
     if (falling) {
       if (falling.moveDown()) {
       } else {
-        falling = new figure(boardCtx);
+        next.clearAll();
+        falling = new figure(boardCtx, next.template);
+        console.log(next.template)
+        next = new figure(waitCtx);
       }
     }
     step = setTimeout(fall, 1000 / currentSpeed);
@@ -106,6 +126,7 @@ var figureTemplates = [
     fields: [{c: 0, r: 0}, {c: 1, r: 0}, {c: 1, r: 1}, {c: 2, r: 1}]
   }
 ]
+
 class field {
   constructor(column, row, ctx, color) {
     this.column = column;
@@ -117,8 +138,8 @@ class field {
     this.ctx.clearRect(this.startX, this.startY, this.fWidth, this.fHeight);
   }
   calculate() {
-    this.fWidth = this.ctx.width / 10;
-    this.fHeight = this.ctx.height / 20;
+    this.fWidth = this.ctx.width / this.ctx.columns;
+    this.fHeight = this.ctx.height / this.ctx.rows;
     this.startX = this.column * this.fWidth;
     this.startY = this.row * this.fHeight;
   }
@@ -194,23 +215,20 @@ var fieldStack = {
   }
 };
 
-
-
-
-
 class figure {
-  constructor(ctx) {
-    let template = figureTemplates[Math.floor(Math.random()*(figureTemplates.length-1-0+1)+0)];
+  constructor(ctx, template = null) {
+    this.template = template? template : figureTemplates[Math.floor(Math.random()*(figureTemplates.length-1-0+1)+0)];
     this.fieldArr = [];
-    this.color = template.color;
-    this.figureWidth = template.figureWidth;
+    this.color = this.template.color;
+    this.figureWidth = this.template.figureWidth;
     this.ctx = ctx;
-    template.fields.forEach((e, idx) => {
-      this.fieldArr[idx] = new field(e.c + Math.floor((10-this.figureWidth)/2), e.r - this.figureWidth, this.ctx, this.color)
+    this.template.fields.forEach((e, idx) => {
+      this.fieldArr[idx] = new field(e.c + Math.floor((this.ctx.columns-this.figureWidth)/2), e.r, this.ctx, this.color)
       this.fieldArr[idx].columnInFigure = e.c;
       this.fieldArr[idx].rowInFigure = e.r;
       this.fieldArr[idx].idx = idx;
     });
+    this.drawAll();
   }
   canMoveDown() {
     return this.fieldArr.every(e => {
@@ -275,10 +293,13 @@ class figure {
       this.drawAll();
     }
   }
-  drawAll = function () {
+  clearAll(){
     this.fieldArr.forEach(e => {
       e.clear();
     });
+  }
+  drawAll() {
+    this.clearAll();
     this.fieldArr.forEach(e => {
       e.draw();
     });
