@@ -3,23 +3,28 @@ window.onload = () => {
   div.classList.add("tetris")
   document.getElementById("tetris-wrapper").appendChild(div);
   
-  
   can = document.createElement("canvas");
   can.width = "300";
   can.height = "600";
   div.appendChild(can);
   can.style.width = "300px";
   can.style.height = "600px";
+  can.id = "mainGame";
   boardCtx = can.getContext("2d");
   boardCtx.width = can.width;
   boardCtx.height = can.height;
   boardCtx.columns = 10;
   boardCtx.rows = 20;
+  boardCtx.startRow = -5;
   
+  stats = document.createElement("div");
+  stats.id = "stats";
+  div.appendChild(stats);
+
   can2 = document.createElement("canvas");
   can2.width = "200";
   can2.height = "200";
-  div.appendChild(can2);
+  stats.appendChild(can2);
   can2.style.width = "200px";
   can2.style.height = "200px";
   waitCtx = can2.getContext("2d");
@@ -27,57 +32,49 @@ window.onload = () => {
   waitCtx.height = can2.height;
   waitCtx.columns = 4;
   waitCtx.rows = 4;
+  waitCtx.startRow = 0;
   
+
+  points = document.createElement("span");
+  points.id = "points";
+  stats.appendChild(points);
+  points.innerHTML = "dupa"
   
-  const initialSpeed = 3;
-  var currentSpeed = 3;
+  level = document.createElement("span");
+  level.id = "level";
+  stats.appendChild(level);
+  level.innerHTML = "dupa"
   
-  var falling = new figure(boardCtx);
-  var next = new figure(waitCtx);
+  game.new();
+
+  
+
+
 
   document.addEventListener('keydown', e => {
     if (e.code === "ArrowRight") {
-      falling.moveSide(1);
+      game.falling.moveSide(1);
     } else if (e.code === "ArrowLeft") {
-      falling.moveSide(-1);
+      game.falling.moveSide(-1);
     } else if (e.code === "ArrowDown") {
-      if (currentSpeed === initialSpeed) {
-        currentSpeed *= 4;
-        fall();
-      }
+      game.speedUp();
     } else if (e.code === "ArrowUp") {
-      falling.rotate();
+      game.falling.rotate();
     }
   });
-  var slowdon = function(){
-    currentSpeed = initialSpeed;
-      fall();
-  }
   document.addEventListener('keyup', e => {
-    if (e.code === "ArrowDown" && currentSpeed != initialSpeed) {
-      slowdon();
+    if (e.code === "ArrowDown" && game.currentSpeed != game.initialSpeed) {
+      game.slowdown();
     }
   })
-  window.addEventListener("blur", e =>{
-    slowdon();
-  });
-  var fps = 20;
-  var step;
 
-  function fall() {
-    if (step) clearTimeout(step);
-    if (falling) {
-      if (falling.moveDown()) {
-      } else {
-        next.clearAll();
-        falling = new figure(boardCtx, next.template);
-        console.log(next.template)
-        next = new figure(waitCtx);
-      }
-    }
-    step = setTimeout(fall, 1000 / currentSpeed);
-  }
-  fall()
+
+  window.addEventListener("blur", e =>{
+    game.slowdown();
+  });
+  
+
+  
 
 }
 
@@ -198,11 +195,13 @@ var fieldStack = {
     return (this.fieldArr[r] && this.fieldArr[r][c]) ? false : true;
   },
   drawAll: function () {
+    let cleared = 0;
     for (let i = this.fieldArr.length-1; i > 0; i--) {
       if(this.fieldArr[i]){
         if(this.rowIsFull(i)){
           this.clearRow(i)
-          this.drawAll();
+          cleared++;
+          i = this.fieldArr.length-1;
         }else{
           this.fieldArr[i].forEach(e => {
             e.clear();
@@ -212,6 +211,7 @@ var fieldStack = {
         }
       }
     }
+    return cleared;
   }
 };
 
@@ -223,7 +223,7 @@ class figure {
     this.figureWidth = this.template.figureWidth;
     this.ctx = ctx;
     this.template.fields.forEach((e, idx) => {
-      this.fieldArr[idx] = new field(e.c + Math.floor((this.ctx.columns-this.figureWidth)/2), e.r, this.ctx, this.color)
+      this.fieldArr[idx] = new field(e.c + Math.floor((this.ctx.columns-this.figureWidth)/2), e.r + this.ctx.startRow, this.ctx, this.color)
       this.fieldArr[idx].columnInFigure = e.c;
       this.fieldArr[idx].rowInFigure = e.r;
       this.fieldArr[idx].idx = idx;
@@ -257,15 +257,13 @@ class figure {
       });
       this.drawAll();
       return true;
-    } else {
-      if(this.sendToStack() === "matched"){
-        setTimeout(() => {
-          fieldStack.drawAll();
-          return false;
-        }, 500);
-      }else return false;
-    }
+    } else if(this.sendToStack() === "matched"){
+      setTimeout(() => {
+        return false;
+      }, 500);
+    }else return false;
   }
+
   moveSide(c) {
     if (this.canMoveSide(c)) {
       this.fieldArr.forEach(e => {
@@ -278,7 +276,7 @@ class figure {
     this.fieldArr.forEach(e => {
       fieldStack.addField(e)
     });
-    fieldStack.drawAll();
+    console.log(fieldStack.drawAll());
   }
   rotate() {
     if (this.canRotate()) {
@@ -303,5 +301,46 @@ class figure {
     this.fieldArr.forEach(e => {
       e.draw();
     });
+  }
+}
+
+game = {
+  step: null,
+  clearedLines: 0,
+  level: 0,
+  new: function(){
+    this.clearAll();
+    this.falling = new figure(boardCtx);
+    this.next = new figure(waitCtx);
+    this.currentSpeed = 3;
+    this.initialSpeed = 3;
+    this.level = 1;
+    this.fall();
+  },
+  clearAll: function(){
+    boardCtx.clearRect(0, 0, boardCtx.width, boardCtx.height);
+    waitCtx.clearRect(0, 0, waitCtx.width, waitCtx.height);
+  },
+  fall: function() {
+    if (this.step) clearTimeout(this.step);
+    if (this.falling) {
+      if (this.falling.moveDown()) {
+      } else {
+        this.next.clearAll();
+        this.falling = new figure(boardCtx, this.next.template);
+        this.next = new figure(waitCtx);
+      }
+    }
+    this.step = setTimeout(() => {this.fall()}, 1000 / this.currentSpeed + this.level);
+  },
+  speedUp: function(){
+    if (this.currentSpeed === this.initialSpeed) {
+      this.currentSpeed *= 4;
+      this.fall();
+    }
+  },
+  slowdown: function(){
+    this.currentSpeed = this.initialSpeed;
+      this.fall();
   }
 }
