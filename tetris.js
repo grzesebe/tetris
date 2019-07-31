@@ -38,12 +38,9 @@ window.onload = () => {
   points = document.createElement("span");
   points.id = "points";
   stats.appendChild(points);
-  points.innerHTML = "dupa"
+  points.innerHTML = "score: 0"
   
-  level = document.createElement("span");
-  level.id = "level";
-  stats.appendChild(level);
-  level.innerHTML = "dupa"
+
   
   game.new();
 
@@ -276,7 +273,8 @@ class figure {
     this.fieldArr.forEach(e => {
       fieldStack.addField(e)
     });
-    console.log(fieldStack.drawAll());
+    game.clearedLines += fieldStack.drawAll()
+    points.innerHTML = "score: " + game.clearedLines;
   }
   rotate() {
     if (this.canRotate()) {
@@ -308,6 +306,7 @@ game = {
   step: null,
   clearedLines: 0,
   level: 0,
+  started: false,
   new: function(){
     this.clearAll();
     this.falling = new figure(boardCtx);
@@ -315,23 +314,32 @@ game = {
     this.currentSpeed = 3;
     this.initialSpeed = 3;
     this.level = 1;
+    this.started = true;
     this.fall();
+  },
+  end: function() {
+    this.started = false;
+    clearInterval(this.step);
+    this.step = null;
+    alert("end of game");
   },
   clearAll: function(){
     boardCtx.clearRect(0, 0, boardCtx.width, boardCtx.height);
     waitCtx.clearRect(0, 0, waitCtx.width, waitCtx.height);
   },
   fall: function() {
-    if (this.step) clearTimeout(this.step);
-    if (this.falling) {
-      if (this.falling.moveDown()) {
-      } else {
-        this.next.clearAll();
-        this.falling = new figure(boardCtx, this.next.template);
-        this.next = new figure(waitCtx);
+    if(this.started){
+      if (this.step) clearTimeout(this.step);
+      if (this.falling) {
+        if (this.falling.moveDown()) {
+        } else {
+          this.next.clearAll();
+          this.falling = new figure(boardCtx, this.next.template);
+          this.next = new figure(waitCtx);
+        }
       }
+      this.step = setTimeout(() => {this.fall()}, 1000 / this.currentSpeed + this.level);
     }
-    this.step = setTimeout(() => {this.fall()}, 1000 / this.currentSpeed + this.level);
   },
   speedUp: function(){
     if (this.currentSpeed === this.initialSpeed) {
