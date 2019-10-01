@@ -255,10 +255,19 @@ class figure {
       this.drawAll();
       return true;
     } else if(this.sendToStack() === "matched"){
+      console.log("e")
       setTimeout(() => {
         return false;
       }, 500);
-    }else return false;
+    }else{
+      this.fieldArr.forEach(e => {
+        if(e.startX < 0){
+          console.log(e.startX )
+          game.end();
+        }
+      });
+      return false;
+    }
   }
 
   moveSide(c) {
